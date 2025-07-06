@@ -1,0 +1,7 @@
+PIN = 16
+DELAY = 0.005
+
+WIFI_SSID = "wifi"
+WIFI_PASSWORD = "password"
+
+API_KEY = "youth_api_key"
