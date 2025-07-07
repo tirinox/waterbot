@@ -1,6 +1,6 @@
 from backend.utils import load_config
 
-TARGET_FILE = '../code/private_const.py'
+TARGET_FILE = '../iot_code/private_const.py'
 
 
 def main():

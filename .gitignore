@@ -210,5 +210,5 @@ __marimo__/
 .idea/
 typings/
 
-code/private_const.py
+iot_code/private_const.py
 config.yaml
