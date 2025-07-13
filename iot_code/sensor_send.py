@@ -1,17 +1,20 @@
+import random
 import time
 
 import machine
 import network
-import random
 import ujson
 import urequests
 
 from const import LED_PIN
-from private_const import WIFI_SSID, WIFI_PASSWORD, CALLBACK_HOST, SHARED_SECRET, PIN
+from private_const import WIFI_SSID, WIFI_PASSWORD, CALLBACK_HOST, SHARED_SECRET
+from simple_weight import get_new_scale, get_weight_kg
 from utils import led_blink
 
 # === Pin setup ===
 water_pin = machine.Pin(LED_PIN, machine.Pin.IN)
+
+hx711 = get_new_scale()
 
 
 # === Wi-Fi connection ===
@@ -27,10 +30,12 @@ def connect_wifi():
     print('Connected, IP address:', wlan.ifconfig()[0])
 
 
-# === Water level reading (stub) ===
+# === Water level reading ===
 def get_water_level():
-    # TODO: replace with actual sensor reading (e.g. ADC)
-    return random.randint(1, 100)
+    weight = hx711.get_value()
+    kg = get_weight_kg(hx711)
+    print(f"{kg} kg = {weight} units")
+    return kg
 
 
 # === POST data ===
@@ -45,7 +50,7 @@ def send_data(level):
         })
         headers = {'Content-Type': 'application/json'}
         response = urequests.post(CALLBACK_HOST, data=payload, headers=headers)
-        print('Sent:', payload, 'Status:', response.status_code)
+        print('Sent Status:', response.status_code)
         response.close()
 
         # two slow blinks after success
@@ -58,6 +63,11 @@ def send_data(level):
 # === Main loop ===
 def sensor_main():
     connect_wifi()
+
+    print("Taring scale…")
+    hx711.tare()
+    print("Ready. Beginning readings.\n")
+
     while True:
         lvl = get_water_level()
         send_data(lvl)
