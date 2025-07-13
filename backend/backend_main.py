@@ -3,9 +3,8 @@ import logging
 from datetime import datetime, timedelta
 
 from aiogram import Bot, Dispatcher
-from aiogram.filters import Command
-from aiogram.types import Message
 from aiohttp import web
+from collections import deque
 
 from backend.utils import load_config, parse_timespan_to_seconds
 
@@ -32,6 +31,8 @@ dp = Dispatcher()
 # Track the last alert timestamp
 last_alert_time: datetime = datetime.min
 
+sensor_data = deque(maxlen=10_000)
+
 
 # === Bot Command Handler ===
 # @dp.message.register(Command(commands=["status"]))
@@ -55,6 +56,12 @@ async def handle_sensor(request: web.Request) -> web.Response:
         now = datetime.now()
         logger.info(f"Received water level: {water_level} at {now.isoformat()} UTC")
 
+        # memorize data
+        sensor_data.append({
+            "water_level": water_level,
+            "timestamp": now.isoformat(),
+        })
+
         if water_level < THRESHOLD:
             # Check if enough time has passed since last alert
             if now - last_alert_time >= ALERT_INTERVAL:
@@ -73,10 +80,15 @@ async def handle_sensor(request: web.Request) -> web.Response:
         return web.json_response({"error": str(e)}, status=500)
 
 
+async def handler_recent_sensor_data(request: web.Request) -> web.Response:
+    return web.json_response(sensor_data)
+
+
 # === Application Setup ===
 def create_app() -> web.Application:
     app = web.Application()
     app.router.add_post('/sensor', handle_sensor)
+    app.router.add_get('/sensor', handler_recent_sensor_data)
     return app
 
 
