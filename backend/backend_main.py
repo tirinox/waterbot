@@ -81,7 +81,8 @@ async def handle_sensor(request: web.Request) -> web.Response:
 
 
 async def handler_recent_sensor_data(request: web.Request) -> web.Response:
-    return web.json_response(sensor_data)
+    # noinspection PyTypeChecker
+    return web.json_response(list(sensor_data))
 
 
 # === Application Setup ===
