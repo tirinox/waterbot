@@ -4,9 +4,9 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiohttp import web
 
-from .bot_logic import WaterBotLogic
-from .db import DB
-from .utils import load_config
+from backend.bot_logic import WaterBotLogic
+from backend.db import DB
+from backend.utils import load_config
 
 cfg = load_config()
 
