@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 class DB:
-    def __init__(self, filename='../db.json', save_every: int = 10):
+    def __init__(self, filename='db.json', save_every: int = 10):
         self.filename = filename
         self._data = {}
         self.save_every = save_every
