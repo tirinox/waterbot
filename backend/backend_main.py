@@ -52,7 +52,8 @@ async def handle_sensor(request: web.Request) -> web.Response:
 
         secret = data.get("secret")
         if secret != SHARED_SECRET:
-            return web.Response(status=401)
+            logger.error(f"Secret does not match, got {secret}")
+            return web.json_response({"error": "wrong secret"}, status=401)
 
         water_level = data.get("water_level")
         if water_level is None:
