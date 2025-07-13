@@ -49,6 +49,11 @@ async def handle_sensor(request: web.Request) -> web.Response:
     global last_alert_time
     try:
         data = await request.json()
+
+        secret = data.get("secret")
+        if secret != SHARED_SECRET:
+            return web.Response(status=401)
+
         water_level = data.get("water_level")
         if water_level is None:
             return web.json_response({"error": "Missing 'water_level' field"}, status=400)
