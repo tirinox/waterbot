@@ -48,7 +48,7 @@ def parse_timespan_to_seconds(span: str, do_float=True):
         return result
 
 
-def load_config(config_path="../config.yaml"):
+def load_config(config_path="config.yaml"):
     # Load configuration from a YAML file
     try:
         with open(config_path, 'r') as file:
