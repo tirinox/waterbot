@@ -1,52 +1,50 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta
 
 from aiogram import Bot, Dispatcher
 from aiohttp import web
-from collections import deque
 
-from backend.utils import load_config, parse_timespan_to_seconds
+from backend.bot_logic import WaterBotLogic
+from backend.db import DB
+from backend.utils import load_config
 
 cfg = load_config()
 
-# === Configuration ===
 SHARED_SECRET = cfg['iot']['shared_secret']  # Shared secret for IoT sensor authentication
 HOST = cfg['api']['host']  # Host for HTTP server
 PORT = cfg['api']['port']  # Port for HTTP server
 BOT_TOKEN = cfg['telegram']['api_token']  # Telegram bot API token
 CHANNEL_ID = cfg['telegram']['channel_id']  # Telegram channel ID to send alerts
-THRESHOLD = cfg['logic']['threshold']  # Water level threshold
-ALERT_INTERVAL = timedelta(
-    seconds=parse_timespan_to_seconds(cfg['logic']['alert_interval']))  # Minimum interval between alerts
 
-# === Logging ===
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# === Bot and Dispatcher ===
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
-
-# Track the last alert timestamp
-last_alert_time: datetime = datetime.min
-
-sensor_data = deque(maxlen=10_000)
+db = DB()
 
 
-# === Bot Command Handler ===
+async def send_message(text):
+    try:
+        if text and isinstance(text, str):
+            await bot.send_message(CHANNEL_ID, text)
+    except Exception as e:
+        logger.error(e)
+
+
+logic = WaterBotLogic(db, cfg, send_message)
+
+
 # @dp.message.register(Command(commands=["status"]))
 # async def status_handler(message: Message):
 #     await message.reply("🤖 Bot is up and running. Waiting for sensor data...")
 
 
-# === HTTP Handler for IoT Sensor ===
 async def handle_sensor(request: web.Request) -> web.Response:
     """
     Endpoint to receive water level data from IoT sensor.
     Expects JSON payload: { "water_level": <number> }
     """
-    global last_alert_time
     try:
         data = await request.json()
 
@@ -59,25 +57,9 @@ async def handle_sensor(request: web.Request) -> web.Response:
         if water_level is None:
             return web.json_response({"error": "Missing 'water_level' field"}, status=400)
 
-        now = datetime.now()
-        logger.info(f"Received water level: {water_level} at {now.isoformat()} UTC")
+        logger.info(f"Received water level: {water_level}")
 
-        # memorize data
-        sensor_data.append({
-            "water_level": water_level,
-            "timestamp": now.isoformat(),
-        })
-
-        if water_level < THRESHOLD:
-            # Check if enough time has passed since last alert
-            if now - last_alert_time >= ALERT_INTERVAL:
-                msg = f"⚠️ Water level is LOW: {water_level} (threshold: {THRESHOLD})"
-                await bot.send_message(CHANNEL_ID, msg)
-                last_alert_time = now
-                logger.warning(f"Alert sent at {now.isoformat()}: {msg}")
-            else:
-                next_allowed = last_alert_time + ALERT_INTERVAL
-                logger.info(f"Skipping alert. Next alert allowed after {next_allowed.isoformat()} UTC")
+        await logic.on_sensor_data(water_level)
 
         return web.json_response({"status": "OK"}, status=200)
 
@@ -86,12 +68,10 @@ async def handle_sensor(request: web.Request) -> web.Response:
         return web.json_response({"error": str(e)}, status=500)
 
 
-async def handler_recent_sensor_data(request: web.Request) -> web.Response:
-    # noinspection PyTypeChecker
-    return web.json_response(list(sensor_data))
+async def handler_recent_sensor_data(_: web.Request) -> web.Response:
+    return web.json_response(logic.sensor_data)
 
 
-# === Application Setup ===
 def create_app() -> web.Application:
     app = web.Application()
     app.router.add_post('/sensor', handle_sensor)
@@ -99,9 +79,7 @@ def create_app() -> web.Application:
     return app
 
 
-# === Main Entry Point ===
 async def main():
-    # Start HTTP server
     app = create_app()
     runner = web.AppRunner(app)
     await runner.setup()

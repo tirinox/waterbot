@@ -6,8 +6,12 @@ telegram:
 
 
 logic:
-  threshold: 30
-  alert_interval: 2h
+  warning_level: 5.0
+  critical_level: 2.0
+
+  cd_normal: 1d
+  cd_warning: 12h
+  cd_critical: 2h
 
 
 api:

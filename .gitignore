@@ -212,3 +212,4 @@ typings/
 
 iot_code/private_const.py
 config.yaml
+db.json
