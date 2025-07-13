@@ -2,14 +2,16 @@ import time
 
 import machine
 import network
+import random
 import ujson
 import urequests
 
+from const import LED_PIN
 from private_const import WIFI_SSID, WIFI_PASSWORD, CALLBACK_HOST, SHARED_SECRET, PIN
 from utils import led_blink
 
 # === Pin setup ===
-water_pin = machine.Pin(PIN, machine.Pin.IN)
+water_pin = machine.Pin(LED_PIN, machine.Pin.IN)
 
 
 # === Wi-Fi connection ===
@@ -28,7 +30,7 @@ def connect_wifi():
 # === Water level reading (stub) ===
 def get_water_level():
     # TODO: replace with actual sensor reading (e.g. ADC)
-    return 100
+    return random.randint(1, 100)
 
 
 # === POST data ===
