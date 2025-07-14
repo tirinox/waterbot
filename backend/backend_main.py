@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import signal
+import sys
 
 from aiogram import Bot, Dispatcher
 from aiohttp import web
@@ -22,6 +24,22 @@ logger = logging.getLogger(__name__)
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 db = DB()
+
+
+def graceful_shutdown(signum, frame):
+    print(f"Received signal {signum!r}, saving database…")
+    try:
+        db.save()
+        print("Database saved ✅")
+    except Exception as e:
+        print(f"Error saving database: {e!r}", file=sys.stderr)
+    finally:
+        sys.exit(0)
+
+
+# catch signal and save DB on exit
+signal.signal(signal.SIGINT, graceful_shutdown)
+signal.signal(signal.SIGTERM, graceful_shutdown)
 
 
 async def send_message(text):
