@@ -1,16 +1,7 @@
 import time
 
-from machine import Pin
-
-from const import HX711_DAT_PIN, HX711_CLK_PIN, SCALE_FACTOR
-from drivers.hx711 import HX711
-
-
-def get_new_scale():
-    pin_out = Pin(HX711_DAT_PIN, Pin.IN, pull=Pin.PULL_DOWN)
-    pin_sck = Pin(HX711_CLK_PIN, Pin.OUT)
-    hx711 = HX711(pin_sck, pin_out)
-    return hx711
+from lib.const import SCALE_FACTOR
+from lib.scale import get_new_scale, get_weight_kg
 
 
 def run_weight():
@@ -31,7 +22,3 @@ def run_weight():
             print("Read error:", e)
         time.sleep(0.1)
 
-
-def get_weight_kg(hx711):
-    readings = hx711.get_value()
-    return readings / SCALE_FACTOR

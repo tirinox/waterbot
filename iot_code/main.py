@@ -1,6 +1,5 @@
+from lib.led import led_blink
 from sensor_send import sensor_main
-from simple_weight import run_weight
-from utils import led_blink
 
 
 def main():

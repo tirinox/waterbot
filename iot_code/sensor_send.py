@@ -1,4 +1,3 @@
-import random
 import time
 
 import machine
@@ -6,10 +5,10 @@ import network
 import ujson
 import urequests
 
-from const import LED_PIN
+from lib.const import LED_PIN
+from lib.led import led_blink
+from playground.simple_weight import get_new_scale, get_weight_kg
 from private_const import WIFI_SSID, WIFI_PASSWORD, CALLBACK_HOST, SHARED_SECRET
-from simple_weight import get_new_scale, get_weight_kg
-from utils import led_blink
 
 # === Pin setup ===
 water_pin = machine.Pin(LED_PIN, machine.Pin.IN)
