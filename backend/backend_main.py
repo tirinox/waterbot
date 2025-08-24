@@ -4,9 +4,12 @@ import signal
 import sys
 
 from aiogram import Bot, Dispatcher
+from aiogram.filters import Command
+from aiogram.types import Message, BufferedInputFile
 from aiohttp import web
 
 from backend.bot_logic import WaterBotLogic
+from backend.chart import plot_water_level_chart
 from backend.db import DB
 from backend.utils import load_config
 
@@ -24,6 +27,7 @@ logger = logging.getLogger(__name__)
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 db = DB()
+db.load()
 
 
 def graceful_shutdown(signum, frame):
@@ -53,9 +57,27 @@ async def send_message(text):
 logic = WaterBotLogic(db, cfg, send_message)
 
 
-# @dp.message.register(Command(commands=["status"]))
-# async def status_handler(message: Message):
-#     await message.reply("🤖 Bot is up and running. Waiting for sensor data...")
+async def send_chart_to_bot(bot, channel):
+    water_level = logic.last_water_level
+
+    caption = (f"🤖 Текущий уровень воды: {logic.format_liter(water_level)}.\n"
+               f"Точек сохранено: {len(logic.sensor_data)}.")
+
+    chart = plot_water_level_chart(logic.sensor_data)
+
+    media = BufferedInputFile(
+        file=chart.read(),
+        filename='chart.png'
+    )
+
+    await bot.send_photo(channel, photo=media, caption=caption)
+
+    chart.close()
+
+
+@dp.message(Command('start'))
+async def status_handler(message: Message):
+    await send_chart_to_bot(message.bot, message.chat.id)
 
 
 async def handle_sensor(request: web.Request) -> web.Response:
@@ -105,6 +127,8 @@ async def main():
     await site.start()
     logger.info(f"HTTP server listening on http://{HOST}:{PORT}/sensor")
 
+    me = await bot.get_me()
+    print(f"Bot started as {me.full_name} (ID: {me.id}, Username: @{me.username})")
     # Start polling Telegram bot
     await dp.start_polling(bot, skip_updates=True)
 

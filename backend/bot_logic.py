@@ -12,7 +12,10 @@ class WaterBotLogic:
         self.db = db
         self.cfg = cfg
         self._send_message = sender_method
-        self._sensor_data = deque(maxlen=10_000)
+
+        save_sensor_data = db.get('sensor_data', [])
+        self._sensor_data = deque(save_sensor_data, maxlen=10_000)
+        self._last_water_level = 0.0
 
         cfg = cfg.get('logic', {})
 
@@ -29,6 +32,10 @@ class WaterBotLogic:
 
         self._warning_level = float(level_warning)
         self._critical_level = float(level_critical)
+
+    @property
+    def last_water_level(self):
+        return self._last_water_level
 
     @staticmethod
     def format_liter(liters):
@@ -59,12 +66,17 @@ class WaterBotLogic:
                 self._cd_normal.do()
                 await self._send_alert_normal(sensor_kg)
 
-    def _store_sensor_data(self, sensor_kg):
+    def _store_sensor_data(self, water_level):
+        self._last_water_level = water_level
         now = datetime.now()
         self._sensor_data.append({
-            "water_level": sensor_kg,
-            "timestamp": now.isoformat(),
+            "water_level": water_level,
+            "timestamp": now.timestamp(),
+            "datetime": now.isoformat(),
         })
+        # noinspection PyTypeChecker
+        self.db["sensor_data"] = list(self._sensor_data)
+        self.db.save_sometimes()
 
     @property
     def sensor_data(self):
