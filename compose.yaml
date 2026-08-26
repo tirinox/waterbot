@@ -1,0 +1,39 @@
+name: waterbot
+
+services:
+  waterbot:
+    build:
+      context: .
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${WATERBOT_PORT:-8080}:8080"
+    volumes:
+      - type: bind
+        source: ./config.yaml
+        target: /app/config.yaml
+        read_only: true
+      - type: volume
+        source: waterbot-data
+        target: /data
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/sensor', timeout=2).read()"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    stop_grace_period: 20s
+
+volumes:
+  waterbot-data:

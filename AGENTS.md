@@ -25,7 +25,8 @@ Do not assume code that works under CPython also works under MicroPython. Keep r
 - `iot_code/playground/`: manual hardware experiments.
 - `example.config.yaml`: documented configuration template.
 - `pyproject.toml` and `uv.lock`: backend dependency and Python version definitions.
-- `Makefile`: local backend launch shortcut.
+- `Dockerfile` and `compose.yaml`: reproducible non-root backend container and persistent state.
+- `Makefile`: local quality, runtime, and container workflow shortcuts.
 
 ## Setup and configuration
 
@@ -75,24 +76,22 @@ The firmware requires MicroPython, a connected board, Wi-Fi credentials, and cal
 - Keep user-facing bot/chart text consistent with the existing Russian-language interface unless a task requests localization.
 - Centralize hardware pins and calibration values rather than duplicating literals.
 - Keep MicroPython code conservative: avoid CPython-only libraries and features, and close network responses promptly.
-- No formatter or linter is configured. Follow the surrounding style, use clear names and type hints where they help, and avoid unrelated mass formatting.
+- Ruff is configured for conservative linting across the repository and formatting of `tests/`. Follow the surrounding style in legacy application/firmware files and avoid unrelated mass formatting.
 - Do not edit generated metadata (`waterbot.egg-info/`) or local IDE/virtual-environment files.
 
-The root `.gitignore` contains a broad `lib/` rule, so `iot_code/lib/` is currently ignored even though firmware imports modules from it. Before changing or adding files there, check `git status --ignored` and `git check-ignore -v <path>` so required source is not silently omitted. Do not force-add ignored files without confirming that repository policy should change.
+`iot_code/lib/` contains required firmware source and must remain trackable. Keep only actual private/generated firmware files, such as `iot_code/private_const.py`, ignored.
 
 ## Validation
 
-There is currently no configured automated test runner or lint task. Use the smallest relevant checks and report exactly what was run.
-
-For backend-only changes, a safe baseline is:
+The project uses pytest and Ruff. Formatting enforcement initially covers `tests/` only so that maintenance work does not rewrite legacy backend or MicroPython sources. Use the smallest relevant checks and report exactly what was run. The full safe check suite is:
 
 ```sh
-uv run python -m compileall -q backend
+make check
 ```
 
 In a prepared local checkout, `.venv/bin/python` may be used instead of `uv run python` when dependency-cache access is restricted.
 
-When adding automated tests, prefer `pytest` tests under `tests/` for pure logic. Use a temporary path for `DB`, a fake async sender for `WaterBotLogic`, and deterministic timestamps where cooldown behavior matters. Avoid importing `backend.backend_main` in unit tests because it loads local configuration and initializes bot/database globals at import time.
+Add `pytest` tests under `tests/` for pure logic. Use a temporary path for `DB`, a fake async sender for `WaterBotLogic`, and deterministic timestamps where cooldown behavior matters. Avoid importing `backend.backend_main` in unit tests because it loads local configuration and initializes bot/database globals at import time.
 
 Treat these as manual/integration checks rather than unit tests:
 

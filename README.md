@@ -1,28 +1,128 @@
-# waterbot
+# Waterbot
 
-Water level control device, weighs the bottle.
+Waterbot monitors the weight of a water bottle and sends Telegram alerts as the measured level crosses configured thresholds.
 
-ToDo: add schematic and more details.
+The repository contains two runtimes:
 
-## Installation
+- `backend/`: a Python 3.12 `aiohttp` service and `aiogram` Telegram bot.
+- `iot_code/`: MicroPython firmware for a Wi-Fi-connected HX711 scale.
 
-1. Clone this repo
-2. ``cd waterbot``
-3. Init venv
-   ```
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-4. Install uv if not installed: https://docs.astral.sh/uv/getting-started/installation/
-5. Install requirements
-   ```
-   uv pip install .
-   ``` 
+## Prerequisites
 
+- Python 3.12
+- [uv](https://docs.astral.sh/uv/)
+- Docker with Compose, if using the container workflow
+- A Telegram bot token and destination channel ID
+- MicroPython hardware for firmware work
 
-## Testing
+## Local setup
 
-Send water level data to the backend with command:
-`curl -X POST -d '{"water_level":12}' http://your-domain.com:9421/sensor`
-Make sure to replace `your-domain.com` with the actual domain or IP address of your backend server.
-Don't forget to open the port 9421 in your firewall.
+Install the locked backend and development dependencies, then create the local configuration:
+
+```sh
+make setup
+make config
+```
+
+Edit `config.yaml` and replace every placeholder. This file contains credentials and is ignored by Git.
+
+Run the backend from the repository root:
+
+```sh
+make run
+```
+
+This starts a live HTTP listener and Telegram polling. It may send messages to the configured channel.
+
+## Container workflow
+
+The Compose service builds a non-root container, mounts `config.yaml` read-only, and stores `db.json` in the named `waterbot-data` volume.
+
+The container expects `api.port: 8080` in `config.yaml`. `WATERBOT_PORT` controls only the published host port and defaults to `8080`:
+
+```sh
+make config
+make docker-up
+make docker-logs
+```
+
+To publish the service on another host port while keeping container port `8080`:
+
+```sh
+WATERBOT_PORT=9421 make docker-up
+```
+
+Common container commands:
+
+| Command | Purpose |
+| --- | --- |
+| `make docker-config` | Validate the rendered Compose configuration |
+| `make docker-build` | Build the image |
+| `make docker-up` | Build and start in the background |
+| `make docker-logs` | Follow recent backend logs |
+| `make docker-ps` | Show service status |
+| `make docker-shell` | Start a disposable shell in the image |
+| `make docker-exec` | Open a shell in the running service |
+| `make docker-restart` | Restart the backend service |
+| `make docker-stop` / `make docker-start` | Stop or start existing containers |
+| `make docker-down` | Remove containers and network, preserving database data |
+
+`docker-down` intentionally keeps the named database volume. Do not use `docker compose down --volumes` unless permanent deletion of stored sensor history is intended.
+
+## Sensor API
+
+The backend exposes the following routes:
+
+- `POST /sensor`: accept a measurement.
+- `GET /sensor`: return recent measurements.
+
+Example request from a trusted development environment:
+
+```sh
+curl --fail-with-body \
+  --request POST \
+  --header 'Content-Type: application/json' \
+  --data '{"water_level": 12, "secret": "<SHARED_SECRET>"}' \
+  http://127.0.0.1:8080/sensor
+```
+
+The firmware's `iot.callback_host` must be the complete endpoint URL, including `/sensor`. Use HTTPS whenever traffic leaves a trusted private network. See [SECURITY.md](SECURITY.md) before exposing the service.
+
+## Quality checks
+
+Run all safe local checks:
+
+```sh
+make check
+```
+
+Individual commands are also available:
+
+```sh
+make format-check
+make lint
+make test
+make compile
+```
+
+The scripts named `backend/dbg_*.py` are manual integration tools. Some contact the configured server or Telegram account and must not be treated as automated tests.
+
+## Firmware
+
+Firmware code lives in `iot_code/` and is not installed into the backend environment. Optional host-side ESP tooling can be installed with:
+
+```sh
+make setup-hardware
+```
+
+Before deploying firmware:
+
+1. Generate `iot_code/private_const.py` from trusted local configuration.
+2. Confirm the board-specific pins and `SCALE_FACTOR` calibration.
+3. Ensure `CALLBACK_HOST` ends with `/sensor` and uses the intended scheme and port.
+
+The repository does not yet define a canonical board flashing/upload command. Document the exact board model, MicroPython version, serial-port discovery, and upload procedure before automating deployment.
+
+## Project commands
+
+Run `make` or `make help` to list the supported local and container workflows.

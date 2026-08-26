@@ -20,7 +20,9 @@ api:
 
 
 iot:
-  callback_host: "http://your.domain.com:8080"
-  wifi_ssid: "SomeSSID"
-  wifi_password: "12345678"
-  shared_secret: "my_shared_secret"
+  # Firmware posts directly to this complete endpoint URL.
+  # Use HTTPS when the endpoint leaves a trusted private network.
+  callback_host: "https://waterbot.example.com/sensor"
+  wifi_ssid: "<YOUR_WIFI_SSID>"
+  wifi_password: "<YOUR_WIFI_PASSWORD>"
+  shared_secret: "<GENERATE_A_LONG_RANDOM_SECRET>"
