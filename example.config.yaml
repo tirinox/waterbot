@@ -9,6 +9,13 @@ logic:
   warning_level: 5.0
   critical_level: 2.0
 
+  # Send an alert only after readings remain within this many liters for the
+  # whole period. This prevents handling a bottle or a single noisy sample from
+  # triggering an immediate notification.
+  stability_period: 1m
+  stability_tolerance: 0.2
+  stability_min_samples: 3
+
   cd_normal: 1d
   cd_warning: 12h
   cd_critical: 2h
