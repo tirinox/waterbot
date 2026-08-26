@@ -8,6 +8,8 @@ Do not open a public issue containing credentials, exploit details, private chat
 
 `config.yaml`, `db.json`, and `iot_code/private_const.py` are local-only files. Never commit them or include their values in logs, screenshots, fixtures, or bug reports. Use long random values for `telegram.api_token` and `iot.shared_secret`, restrict file permissions, and rotate credentials immediately if they may have been exposed.
 
+Generate firmware constants with `make sync-config`: it replaces the destination atomically with permissions `0600` and reports key names only. Run `make sync-config-dry-run` first when checking a new configuration or target.
+
 Secrets stored on a MicroPython board may be recoverable by someone with physical access. Use a dedicated, restricted Wi-Fi network where possible and keep device credentials independently rotatable.
 
 ## Deployment baseline

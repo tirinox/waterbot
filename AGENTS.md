@@ -47,7 +47,7 @@ The following files contain credentials or mutable local state and are intention
 
 Never commit, paste into logs, or expose values from these files. Update `example.config.yaml` with placeholders when adding configuration keys. Keep backend and firmware configuration names synchronized.
 
-`backend/sync_config.py` currently uses working-directory-relative paths for both its input and output. From the repository root its output path points outside this repository; from `backend/` its default input path is wrong. Inspect and correct/override its paths before using it, and verify the exact destination. Do not overwrite a real `private_const.py` casually.
+Use `make sync-config-dry-run` to validate firmware configuration before `make sync-config` generates `iot_code/private_const.py`. The generator uses repository-relative defaults, does not print values, and supports explicit `--config` and `--target` overrides. Treat the generated file as a secret and do not display its contents.
 
 ## Running and interfaces
 

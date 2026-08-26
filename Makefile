@@ -5,7 +5,8 @@ UV ?= uv
 COMPOSE ?= docker compose
 SERVICE ?= waterbot
 
-.PHONY: help setup setup-hardware config check-config run compile lint format format-check test check \
+.PHONY: help setup setup-hardware config check-config sync-config sync-config-dry-run run \
+	compile lint format format-check test check \
 	docker-config docker-build docker-up docker-down docker-stop docker-start docker-restart \
 	docker-logs docker-ps docker-shell docker-exec
 
@@ -24,6 +25,12 @@ config: ## Create config.yaml from the example if it does not exist
 
 check-config:
 	@test -f config.yaml || { echo "config.yaml is missing; run 'make config' first." >&2; exit 1; }
+
+sync-config: check-config ## Generate private MicroPython constants from config.yaml
+	$(UV) run python -m backend.sync_config
+
+sync-config-dry-run: check-config ## Validate IoT configuration without writing secrets
+	$(UV) run python -m backend.sync_config --dry-run
 
 run: check-config ## Run the backend locally (live Telegram and HTTP connections)
 	PYTHONPATH=. $(UV) run python backend/backend_main.py

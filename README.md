@@ -117,7 +117,15 @@ make setup-hardware
 
 Before deploying firmware:
 
-1. Generate `iot_code/private_const.py` from trusted local configuration.
+1. Validate and generate `iot_code/private_const.py` from trusted local configuration:
+
+   ```sh
+   make sync-config-dry-run
+   make sync-config
+   ```
+
+   The generator resolves its default paths from the repository, never prints configuration values, replaces the target atomically, and sets its permissions to owner read/write (`0600`). Use `uv run python -m backend.sync_config --help` to see explicit source and target overrides.
+
 2. Confirm the board-specific pins and `SCALE_FACTOR` calibration.
 3. Ensure `CALLBACK_HOST` ends with `/sensor` and uses the intended scheme and port.
 
