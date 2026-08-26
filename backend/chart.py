@@ -1,11 +1,13 @@
+from collections import deque
 from datetime import datetime
 from io import BytesIO
 
 import matplotlib.dates as mdates
 import matplotlib.ticker as mticker
-from collections import deque
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
+
+from backend.water_usage import estimate_water_usage
 
 
 BACKGROUND_COLOR = "#F4F7FB"
@@ -30,6 +32,7 @@ def plot_water_level_chart(sensor_data: deque) -> BytesIO:
 
     if not times:
         raise ValueError("Нет данных для построения графика")
+    usage_estimate = estimate_water_usage(sensor_data)
     fig = Figure(figsize=(10, 5.2), dpi=140, facecolor=BACKGROUND_COLOR)
     FigureCanvasAgg(fig)
     ax = fig.subplots()
@@ -52,6 +55,17 @@ def plot_water_level_chart(sensor_data: deque) -> BytesIO:
         solid_joinstyle="round",
         zorder=3,
     )
+
+    if usage_estimate is not None:
+        ax.plot(
+            [usage_estimate.observed_from, usage_estimate.observed_until],
+            [usage_estimate.trend_start_level, usage_estimate.trend_end_level],
+            color="#7A5AF8",
+            linewidth=2,
+            linestyle=(0, (5, 4)),
+            label="Тренд расхода",
+            zorder=4,
+        )
 
     if len(times) <= 30:
         ax.scatter(
@@ -107,10 +121,16 @@ def plot_water_level_chart(sensor_data: deque) -> BytesIO:
         fontsize=18,
         fontweight="bold",
     )
+    subtitle = f"Динамика по {len(levels)} измерениям"
+    if usage_estimate is not None:
+        subtitle = f"Средний расход {usage_estimate.average_liters_per_day:.1f} л/день"
+        if usage_estimate.predicted_empty_at is not None:
+            subtitle += f"  •  Прогноз: {usage_estimate.predicted_empty_at:%d.%m, %H:%M}"
+
     ax.text(
         0,
         1.025,
-        f"Динамика по {len(levels)} измерениям",
+        subtitle,
         transform=ax.transAxes,
         color=MUTED_COLOR,
         fontsize=10,
@@ -123,6 +143,13 @@ def plot_water_level_chart(sensor_data: deque) -> BytesIO:
     for spine in ax.spines.values():
         spine.set_visible(False)
     ax.tick_params(axis="both", colors=MUTED_COLOR, labelsize=9, length=0, pad=10)
+    if usage_estimate is not None:
+        ax.legend(
+            loc="upper right",
+            frameon=False,
+            labelcolor=MUTED_COLOR,
+            fontsize=9,
+        )
 
     fig.subplots_adjust(left=0.1, right=0.96, top=0.82, bottom=0.18)
     buffer = BytesIO()
