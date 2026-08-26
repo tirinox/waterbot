@@ -33,7 +33,7 @@ def connect_wifi():
 def get_water_level():
     weight = hx711.get_value()
     kg = get_weight_kg(hx711)
-    print(f"{kg} kg = {weight} units")
+    print(f"Measured {kg} kg = {weight} units")
     return kg
 
 

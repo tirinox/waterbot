@@ -5,13 +5,13 @@ import sys
 
 from aiogram import Bot, Dispatcher
 from aiogram.filters import Command
-from aiogram.types import Message, BufferedInputFile
+from aiogram.types import Message
 from aiohttp import web
 
 from backend.bot_logic import WaterBotLogic
-from backend.chart import plot_water_level_chart
 from backend.db import DB
 from backend.http_api import create_sensor_app
+from backend.telegram_notification import send_chart_notification
 from backend.utils import load_config
 
 cfg = load_config()
@@ -50,7 +50,7 @@ signal.signal(signal.SIGTERM, graceful_shutdown)
 async def send_message(text):
     try:
         if text and isinstance(text, str):
-            await bot.send_message(CHANNEL_ID, text)
+            await send_chart_notification(bot, CHANNEL_ID, logic.sensor_data, text)
     except Exception as e:
         logger.error(e)
 
@@ -61,19 +61,11 @@ logic = WaterBotLogic(db, cfg, send_message)
 async def send_chart_to_bot(bot, channel):
     water_level = logic.last_water_level
 
-    caption = (f"🤖 Текущий уровень воды: {logic.format_liter(water_level)}.\n"
-               f"Точек сохранено: {len(logic.sensor_data)}.")
-
-    chart = plot_water_level_chart(logic.sensor_data)
-
-    media = BufferedInputFile(
-        file=chart.read(),
-        filename='chart.png'
+    caption = (
+        f"🤖 Текущий уровень воды: {logic.format_liter(water_level)}.\n"
+        f"Точек сохранено: {len(logic.sensor_data)}."
     )
-
-    await bot.send_photo(channel, photo=media, caption=caption)
-
-    chart.close()
+    await send_chart_notification(bot, channel, logic.sensor_data, caption)
 
 
 @dp.message(Command('start'))
