@@ -21,4 +21,6 @@ Secrets stored on a MicroPython board may be recoverable by someone with physica
 - Back up the persistent database volume before upgrades.
 - Review logs for accidental credential disclosure before sharing them.
 
-The current application uses a shared secret in each sensor request. HTTPS is therefore required outside a trusted private network; otherwise the credential and readings can be intercepted and replayed.
+The sensor API authenticates reads and writes using the configured shared secret. Prefer the `Authorization: Bearer` header; JSON-body authentication remains supported for existing firmware. Failed authentication never logs the submitted credential. HTTPS is required outside a trusted private network because a captured credential can still be replayed.
+
+The application enforces a small request-body limit, a configurable water-level range, and a basic per-client rate limit. Internet-facing deployments should also enforce limits at the reverse proxy or firewall.

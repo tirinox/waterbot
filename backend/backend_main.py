@@ -11,6 +11,7 @@ from aiohttp import web
 from backend.bot_logic import WaterBotLogic
 from backend.chart import plot_water_level_chart
 from backend.db import DB
+from backend.http_api import create_sensor_app
 from backend.utils import load_config
 
 cfg = load_config()
@@ -80,43 +81,8 @@ async def status_handler(message: Message):
     await send_chart_to_bot(message.bot, message.chat.id)
 
 
-async def handle_sensor(request: web.Request) -> web.Response:
-    """
-    Endpoint to receive water level data from IoT sensor.
-    Expects JSON payload: { "water_level": <number> }
-    """
-    try:
-        data = await request.json()
-
-        secret = data.get("secret")
-        if secret != SHARED_SECRET:
-            logger.error(f"Secret does not match, got {secret}")
-            return web.json_response({"error": "wrong secret"}, status=401)
-
-        water_level = data.get("water_level")
-        if water_level is None:
-            return web.json_response({"error": "Missing 'water_level' field"}, status=400)
-
-        logger.info(f"Received water level: {water_level}")
-
-        await logic.on_sensor_data(water_level)
-
-        return web.json_response({"status": "OK"}, status=200)
-
-    except Exception as e:
-        logger.error(f"Error handling sensor data: {e}")
-        return web.json_response({"error": str(e)}, status=500)
-
-
-async def handler_recent_sensor_data(_: web.Request) -> web.Response:
-    return web.json_response(logic.sensor_data)
-
-
 def create_app() -> web.Application:
-    app = web.Application()
-    app.router.add_post('/sensor', handle_sensor)
-    app.router.add_get('/sensor', handler_recent_sensor_data)
-    return app
+    return create_sensor_app(logic, SHARED_SECRET, cfg.get("api", {}))
 
 
 async def main():

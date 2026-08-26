@@ -61,8 +61,9 @@ This is a live operation: it reads real configuration and state, starts network 
 
 The sensor API contract is:
 
-- `POST /sensor` with JSON fields `water_level` and `secret`.
-- `GET /sensor` returns the recent in-memory measurement list.
+- `POST /sensor` accepts a numeric `water_level` and authenticates with a Bearer/header secret or the firmware-compatible JSON `secret` field.
+- `GET /sensor` requires header authentication and returns the recent in-memory measurement list.
+- Request size, rate, and accepted water-level range are configured under `api`.
 
 The firmware requires MicroPython, a connected board, Wi-Fi credentials, and calibrated pin/scale constants. No board flashing or deployment command is documented in this repository. Do not invent one; ask for or document the actual board workflow when hardware deployment is in scope.
 

@@ -73,8 +73,8 @@ Common container commands:
 
 The backend exposes the following routes:
 
-- `POST /sensor`: accept a measurement.
-- `GET /sensor`: return recent measurements.
+- `POST /sensor`: accept an authenticated measurement.
+- `GET /sensor`: return recent measurements to an authenticated client.
 
 Example request from a trusted development environment:
 
@@ -82,9 +82,20 @@ Example request from a trusted development environment:
 curl --fail-with-body \
   --request POST \
   --header 'Content-Type: application/json' \
-  --data '{"water_level": 12, "secret": "<SHARED_SECRET>"}' \
+  --header 'Authorization: Bearer <SHARED_SECRET>' \
+  --data '{"water_level": 12}' \
   http://127.0.0.1:8080/sensor
 ```
+
+Read recent measurements with the same header:
+
+```sh
+curl --fail-with-body \
+  --header 'Authorization: Bearer <SHARED_SECRET>' \
+  http://127.0.0.1:8080/sensor
+```
+
+For compatibility, firmware POST requests may continue to include `secret` in the JSON body. GET requests require the Bearer header. Requests are size- and rate-limited, and `water_level` must be a finite number inside the configured range.
 
 The firmware's `iot.callback_host` must be the complete endpoint URL, including `/sensor`. Use HTTPS whenever traffic leaves a trusted private network. See [SECURITY.md](SECURITY.md) before exposing the service.
 
