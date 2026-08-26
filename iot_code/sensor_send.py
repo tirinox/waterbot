@@ -8,7 +8,7 @@ import urequests
 from lib.const import LED_PIN
 from lib.led import led_blink
 from playground.simple_weight import get_new_scale, get_weight_kg
-from private_const import WIFI_SSID, WIFI_PASSWORD, CALLBACK_HOST, SHARED_SECRET
+from private_const import WIFI_SSID, WIFI_PASSWORD, CALLBACK_HOST, SHARED_SECRET, DELAY
 
 # === Pin setup ===
 water_pin = machine.Pin(LED_PIN, machine.Pin.IN)
@@ -94,4 +94,4 @@ def sensor_main():
             hx711.tare()
             tare_completed = True
             print("Tare complete.")
-        time.sleep(5)
+        time.sleep(DELAY)

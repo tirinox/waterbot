@@ -31,3 +31,5 @@ iot:
   wifi_ssid: "<YOUR_WIFI_SSID>"
   wifi_password: "<YOUR_WIFI_PASSWORD>"
   shared_secret: "<GENERATE_A_LONG_RANDOM_SECRET>"
+  # Delay in seconds between sensor submissions.
+  delay: 5
