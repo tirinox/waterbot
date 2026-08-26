@@ -65,7 +65,7 @@ The sensor API contract is:
 - `GET /sensor` requires header authentication and returns the recent in-memory measurement list.
 - Request size, rate, and accepted water-level range are configured under `api`.
 
-The firmware requires MicroPython, a connected board, Wi-Fi credentials, and calibrated pin/scale constants. No board flashing or deployment command is documented in this repository. Do not invent one; ask for or document the actual board workflow when hardware deployment is in scope.
+The firmware requires MicroPython, a connected board, Wi-Fi credentials, and calibrated pin/scale constants. `make iot-upload` uses `mpremote` to generate private constants, copy the application to a board that already runs MicroPython, and soft-reset it; `PORT` selects a serial device and defaults to `auto`. This is application deployment, not firmware flashing. The exact board model and MicroPython version are still required before adding a flashing command.
 
 ## Development guidelines
 

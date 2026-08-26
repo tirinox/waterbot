@@ -4,9 +4,13 @@ SHELL := /bin/sh
 UV ?= uv
 COMPOSE ?= docker compose
 SERVICE ?= waterbot
+MPREMOTE ?= $(UV) run --group hardware mpremote
+PORT ?= auto
+IOT_DIR ?= iot_code
 
 .PHONY: help setup setup-hardware config check-config sync-config sync-config-dry-run run \
 	compile lint format format-check test check \
+	iot-ports iot-upload iot-repl \
 	docker-config docker-build docker-up docker-down docker-stop docker-start docker-restart \
 	docker-logs docker-ps docker-shell docker-exec
 
@@ -16,7 +20,7 @@ help: ## Show available commands
 setup: ## Install locked backend and development dependencies
 	$(UV) sync --locked --dev
 
-setup-hardware: ## Install the optional ESP tooling dependency group
+setup-hardware: ## Install optional ESP and MicroPython device tools
 	$(UV) sync --locked --dev --group hardware
 
 config: ## Create config.yaml from the example if it does not exist
@@ -31,6 +35,22 @@ sync-config: check-config ## Generate private MicroPython constants from config.
 
 sync-config-dry-run: check-config ## Validate IoT configuration without writing secrets
 	$(UV) run python -m backend.sync_config --dry-run
+
+iot-ports: ## List connected MicroPython serial devices
+	$(MPREMOTE) connect list
+
+iot-upload: sync-config ## Upload MicroPython application and reset the device (PORT=auto)
+	$(MPREMOTE) connect $(PORT) fs cp -r \
+		$(IOT_DIR)/main.py \
+		$(IOT_DIR)/sensor_send.py \
+		$(IOT_DIR)/private_const.py \
+		$(IOT_DIR)/drivers \
+		$(IOT_DIR)/lib \
+		$(IOT_DIR)/playground \
+		: + reset
+
+iot-repl: ## Open a MicroPython REPL (PORT=auto)
+	$(MPREMOTE) connect $(PORT) repl
 
 run: check-config ## Run the backend locally (live Telegram and HTTP connections)
 	PYTHONPATH=. $(UV) run python backend/backend_main.py

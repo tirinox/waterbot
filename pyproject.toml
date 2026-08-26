@@ -18,6 +18,7 @@ dev = [
 ]
 hardware = [
     "esptool>=5.0.0",
+    "mpremote>=1.25.0",
 ]
 
 [build-system]

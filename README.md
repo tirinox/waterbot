@@ -125,7 +125,7 @@ The scripts named `backend/dbg_*.py` are manual integration tools. Some contact 
 
 ## Firmware
 
-Firmware code lives in `iot_code/` and is not installed into the backend environment. Optional host-side ESP tooling can be installed with:
+Firmware code lives in `iot_code/` and is not installed into the backend environment. Optional host-side ESP and MicroPython tooling can be installed with:
 
 ```sh
 make setup-hardware
@@ -145,7 +145,28 @@ Before deploying firmware:
 2. Confirm the board-specific pins and `SCALE_FACTOR` calibration.
 3. Ensure `CALLBACK_HOST` ends with `/sensor` and uses the intended scheme and port.
 
-The repository does not yet define a canonical board flashing/upload command. Document the exact board model, MicroPython version, serial-port discovery, and upload procedure before automating deployment.
+Connect a board that already has MicroPython installed, then upload the application and restart it:
+
+```sh
+make iot-upload
+```
+
+The command regenerates `iot_code/private_const.py`, copies the application to the board's
+filesystem root with `mpremote`, and performs a soft reset. It does not install or replace the
+MicroPython firmware itself.
+
+`mpremote` automatically selects the serial device when only one is connected. On macOS, list
+devices or select one explicitly when needed:
+
+```sh
+make iot-ports
+make iot-upload PORT=/dev/cu.usbserial-0001
+make iot-repl PORT=/dev/cu.usbserial-0001
+```
+
+Close PyCharm's MicroPython console before uploading so it releases the serial port. If the
+board does not already run MicroPython, its exact model and firmware version are still required
+before adding a flashing command.
 
 ## Project commands
 
