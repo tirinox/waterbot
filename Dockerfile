@@ -32,6 +32,6 @@ COPY --from=builder --chown=waterbot:waterbot /app/.venv ./.venv
 COPY --chown=waterbot:waterbot backend ./backend
 
 USER waterbot
-EXPOSE 8080
+EXPOSE 9421
 
 CMD ["python", "backend/backend_main.py"]

@@ -6,8 +6,10 @@ services:
       context: .
     init: true
     restart: unless-stopped
+    environment:
+      WATERBOT_PORT: "${WATERBOT_PORT:-9421}"
     ports:
-      - "${WATERBOT_PORT:-8080}:8080"
+      - "${WATERBOT_PORT:-9421}:${WATERBOT_PORT:-9421}"
     volumes:
       - type: bind
         source: ./config.yaml
@@ -28,7 +30,7 @@ services:
         - CMD
         - python
         - -c
-        - "import socket; socket.create_connection(('127.0.0.1', 8080), timeout=2).close()"
+        - "import os, socket; socket.create_connection(('127.0.0.1', int(os.environ['WATERBOT_PORT'])), timeout=2).close()"
       interval: 30s
       timeout: 5s
       retries: 3

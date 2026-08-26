@@ -38,7 +38,7 @@ This starts a live HTTP listener and Telegram polling. It may send messages to t
 
 The Compose service builds a non-root container, mounts `config.yaml` read-only, and stores `db.json` in the named `waterbot-data` volume.
 
-The container expects `api.port: 8080` in `config.yaml`. `WATERBOT_PORT` controls only the published host port and defaults to `8080`:
+The `api.port` value in `config.yaml` must match `WATERBOT_PORT`, which defaults to `9421`:
 
 ```sh
 make config
@@ -46,10 +46,10 @@ make docker-up
 make docker-logs
 ```
 
-To publish the service on another host port while keeping container port `8080`:
+To use another port, update `api.port` in `config.yaml` and pass the same value to Compose:
 
 ```sh
-WATERBOT_PORT=9421 make docker-up
+WATERBOT_PORT=8080 make docker-up
 ```
 
 Common container commands:
@@ -84,7 +84,7 @@ curl --fail-with-body \
   --header 'Content-Type: application/json' \
   --header 'Authorization: Bearer <SHARED_SECRET>' \
   --data '{"water_level": 12}' \
-  http://127.0.0.1:8080/sensor
+  http://127.0.0.1:9421/sensor
 ```
 
 Read recent measurements with the same header:
@@ -92,7 +92,7 @@ Read recent measurements with the same header:
 ```sh
 curl --fail-with-body \
   --header 'Authorization: Bearer <SHARED_SECRET>' \
-  http://127.0.0.1:8080/sensor
+  http://127.0.0.1:9421/sensor
 ```
 
 For compatibility, firmware POST requests may continue to include `secret` in the JSON body. GET requests require the Bearer header. Requests are size- and rate-limited, and `water_level` must be a finite number inside the configured range.
