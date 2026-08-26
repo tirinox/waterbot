@@ -1,0 +1,7 @@
+HX711_DAT_PIN = 4
+HX711_CLK_PIN = 3
+LED_PIN = 8
+BUZZER_PIN = 7
+BUZZER_ON_DUTY = 512  # 50% duty cycle
+
+SCALE_FACTOR = 105_000 / 4  # 4 KG = 105K units
