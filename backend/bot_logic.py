@@ -16,6 +16,7 @@ class WaterBotLogic:
         save_sensor_data = db.get('sensor_data', [])
         self._sensor_data = deque(save_sensor_data, maxlen=10_000)
         self._last_water_level = 0.0
+        self._tare_requested = db.get('tare_requested', False) is True
 
         cfg = cfg.get('logic', {})
 
@@ -40,6 +41,22 @@ class WaterBotLogic:
     @staticmethod
     def format_liter(liters):
         return f'{liters:0.1f} л.'
+
+    @property
+    def tare_requested(self):
+        return self._tare_requested
+
+    def request_tare(self):
+        self._tare_requested = True
+        self.db['tare_requested'] = True
+        self.db.save()
+
+    def acknowledge_tare(self):
+        if not self._tare_requested:
+            return
+        self._tare_requested = False
+        self.db['tare_requested'] = False
+        self.db.save()
 
     async def _send_alert_normal(self, level_kg: float):
         await self._send_message(f"💧Вода: {self.format_liter(level_kg)} осталось.")

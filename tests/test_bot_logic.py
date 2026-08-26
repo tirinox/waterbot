@@ -38,3 +38,25 @@ def test_level_selects_expected_alert(tmp_path, level, expected_fragment):
     assert expected_fragment in messages[0]
     assert logic.last_water_level == level
     assert logic.sensor_data[-1]["water_level"] == level
+
+
+def test_tare_request_is_persisted_until_acknowledged(tmp_path):
+    async def sender(_message):
+        pass
+
+    db_path = tmp_path / "db.json"
+    db = DB(filename=db_path)
+    logic = WaterBotLogic(db, {}, sender)
+
+    logic.request_tare()
+
+    reloaded_db = DB(filename=db_path)
+    reloaded_db.load()
+    reloaded_logic = WaterBotLogic(reloaded_db, {}, sender)
+    assert reloaded_logic.tare_requested is True
+
+    reloaded_logic.acknowledge_tare()
+
+    final_db = DB(filename=db_path)
+    final_db.load()
+    assert final_db.get("tare_requested") is False

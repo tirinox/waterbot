@@ -81,6 +81,12 @@ async def status_handler(message: Message):
     await send_chart_to_bot(message.bot, message.chat.id)
 
 
+@dp.message(Command('tare'))
+async def tare_handler(message: Message):
+    logic.request_tare()
+    await message.answer("⚖️ Команда тарирования поставлена в очередь.")
+
+
 def create_app() -> web.Application:
     return create_sensor_app(logic, SHARED_SECRET, cfg.get("api", {}))
 

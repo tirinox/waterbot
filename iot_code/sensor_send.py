@@ -38,25 +38,41 @@ def get_water_level():
 
 
 # === POST data ===
-def send_data(level):
+def send_data(level, tare_completed=False):
+    response = None
     try:
         # one quick blink before request
         led_blink(times=1, delay_on=0.1)
 
-        payload = ujson.dumps({
+        data = {
             'water_level': level,
             'secret': SHARED_SECRET
-        })
+        }
+        if tare_completed:
+            data['tare_completed'] = True
+
+        payload = ujson.dumps(data)
         headers = {'Content-Type': 'application/json'}
         response = urequests.post(CALLBACK_HOST, data=payload, headers=headers)
         print('Sent Status:', response.status_code)
+        status_code = response.status_code
+        response_data = response.json()
         response.close()
+        response = None
+
+        if status_code != 200:
+            return False, False
 
         # two slow blinks after success
         led_blink(times=2, delay_on=0.2)
+        return True, response_data.get('tare', False) is True
 
     except Exception as e:
         print('Error sending data:', e)
+        return False, False
+    finally:
+        if response is not None:
+            response.close()
 
 
 # === Main loop ===
@@ -67,7 +83,15 @@ def sensor_main():
     hx711.tare()
     print("Ready. Beginning readings.\n")
 
+    tare_completed = False
     while True:
         lvl = get_water_level()
-        send_data(lvl)
+        sent, tare_requested = send_data(lvl, tare_completed)
+        if sent:
+            tare_completed = False
+        if tare_requested:
+            print("Tare requested by Telegram command…")
+            hx711.tare()
+            tare_completed = True
+            print("Tare complete.")
         time.sleep(5)

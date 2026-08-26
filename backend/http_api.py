@@ -93,6 +93,10 @@ def create_sensor_app(logic, shared_secret: str, config: Mapping | None = None) 
             logger.warning("Rejected unauthorized sensor write from %s", request.remote or "unknown")
             return _error("unauthorized", 401)
 
+        tare_completed = data.get("tare_completed", False)
+        if not isinstance(tare_completed, bool):
+            return _error("tare_completed must be a boolean", 400)
+
         water_level = data.get("water_level")
         if isinstance(water_level, bool) or not isinstance(water_level, (int, float)):
             return _error("water_level must be a number", 400)
@@ -106,8 +110,10 @@ def create_sensor_app(logic, shared_secret: str, config: Mapping | None = None) 
             return _error(f"water_level must be between {min_level:g} and {max_level:g}", 400)
 
         logger.info("Received water level: %s", water_level)
+        if tare_completed:
+            logic.acknowledge_tare()
         await logic.on_sensor_data(water_level)
-        return web.json_response({"status": "OK"})
+        return web.json_response({"status": "OK", "tare": logic.tare_requested})
 
     async def get_sensor(request: web.Request) -> web.Response:
         if not _authorized(_header_secret(request), expected_secret):

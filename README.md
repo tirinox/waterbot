@@ -73,7 +73,7 @@ Common container commands:
 
 The backend exposes the following routes:
 
-- `POST /sensor`: accept an authenticated measurement.
+- `POST /sensor`: accept an authenticated measurement and return pending device commands.
 - `GET /sensor`: return recent measurements to an authenticated client.
 
 Example request from a trusted development environment:
@@ -96,6 +96,11 @@ curl --fail-with-body \
 ```
 
 For compatibility, firmware POST requests may continue to include `secret` in the JSON body. GET requests require the Bearer header. Requests are size- and rate-limited, and `water_level` must be a finite number inside the configured range.
+
+Sending `/tare` to the Telegram bot queues a persistent scale-tare command. The next successful
+firmware POST receives `{"status": "OK", "tare": true}`. After taring, the firmware sends
+`"tare_completed": true`; the backend then clears the command. Keep the scale unloaded while
+taring.
 
 The firmware's `iot.callback_host` must be the complete endpoint URL, including `/sensor`. Use HTTPS whenever traffic leaves a trusted private network. See [SECURITY.md](SECURITY.md) before exposing the service.
 
